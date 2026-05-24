@@ -1,5 +1,5 @@
 media/*
-!media/lesson/preview/.gitkeep
+!media/courses/lessons/preview/.gitkeep
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
