@@ -2,6 +2,8 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
+from lms.models import Course, Lesson
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -49,3 +51,32 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class Payment(models.Model):
+    class PayMethod(models.TextChoices):
+        CASH = "cash", "Наличные"
+        TRANSFER = "transfer", "Перевод на счет"
+
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="payments", verbose_name="Пользователь"
+    )
+    payment_date = models.DateField(verbose_name="Дата платежа")
+    paid_course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, verbose_name="Оплаченный курс", null=True, blank=True
+    )
+    paid_lesson = models.ForeignKey(
+        Lesson, on_delete=models.CASCADE, verbose_name="Оплаченный урок", null=True, blank=True
+    )
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма оплаты")
+    payment_method = models.CharField(
+        max_length=30, choices=PayMethod.choices, default=PayMethod.TRANSFER, verbose_name="Способ оплаты"
+    )
+
+    def __str__(self):
+        return f"{self.user} - {self.payment_method}- {self.payment_date}"
+
+    class Meta:
+        verbose_name = "Платеж"
+        verbose_name_plural = "Платежи"
+        ordering = ["-payment_date"]
