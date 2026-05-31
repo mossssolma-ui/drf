@@ -36,7 +36,9 @@ class Lesson(models.Model):
         verbose_name="Превью урока",
         help_text="Загрузите превью урока",
     )
-    video_url = models.URLField(max_length=300, blank=True, null=True, verbose_name="Ссылка на видео", help_text="Укажите ссылку на видео")
+    video_url = models.URLField(
+        max_length=300, blank=True, null=True, verbose_name="Ссылка на видео", help_text="Укажите ссылку на видео"
+    )
 
     def __str__(self):
         return self.title
