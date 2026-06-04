@@ -5,6 +5,12 @@ from users.models import CustomUser, Payment
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
+    def get_groups(self, obj):
+        names = [group.name for group in obj.groups.all()]
+        return ", ".join(names)
+
+    list_display = ("id", "email", "is_staff", "is_active", "is_superuser", "get_groups")
+    list_filter = ("is_staff", "is_active", "is_superuser")
     exclude = ("password",)
 
 
