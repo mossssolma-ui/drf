@@ -19,12 +19,6 @@ class UserCreateAPIView(generics.CreateAPIView):
             return Response({"message": "Пользователь существует"}, status=status.HTTP_409_CONFLICT)
         return super().create(request, *args, **kwargs)
 
-    def perform_create(self, serializer):
-        password = serializer.validated_data.get("password")
-        user = serializer.save(is_active=True)
-        user.set_password(password)
-        user.save()
-
 
 class UserListAPIView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
