@@ -11,16 +11,20 @@ class PaymentSerializer(serializers.ModelSerializer):
             return f"Курс: {obj.paid_course.title}"
         elif obj.paid_lesson:
             return f"Урок: {obj.paid_lesson.title}"
-        return 'Нет данных'
+        return "Нет данных"
 
     class Meta:
         model = Payment
         fields = "__all__"
 
 
-class UserSerializer(serializers.ModelSerializer):
+class CustomUserSerializer(serializers.ModelSerializer):
     payments = PaymentSerializer(many=True, read_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ("id", "email", "phone_number", "city", "avatar", "payments")
+        fields = ("id", "email", "phone_number", "city", "avatar", "payments", "password")
+        extra_kwargs = {"password": {"write_only": True}}
+
+    def create(self, validated_data):
+        return CustomUser.objects.create_user(**validated_data)

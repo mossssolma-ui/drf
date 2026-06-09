@@ -9,7 +9,8 @@ Backend-сервер для платформы онлайн-обучения (Le
 - `Django 6.x`
 - `Django REST Framework`
 - `django-filter`
+- 'djangorestframework-simplejwt'
 - `Pillow`
+- `ipython`
 - `python-dotenv`
 - `PostgreSQL`
-
