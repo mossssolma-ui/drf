@@ -6,7 +6,7 @@ from lms.models import Course, Lesson, Subscription
 from lms.paginators import CustomPaginator
 from lms.permissions import IsOwner
 from lms.serializers import CourseSerializer, LessonSerializer
-from users.permissions import IsModerator, IsNotModerator
+from users.permissions import IsModerator
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -32,9 +32,9 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == "create":
-            self.permission_classes = [IsNotModerator]
+            self.permission_classes = [~IsModerator]
         elif self.action == "destroy":
-            self.permission_classes = [IsOwner, IsNotModerator]
+            self.permission_classes = [IsOwner, ~IsModerator]
         elif self.action in ["update", "retrieve"]:
             self.permission_classes = [IsOwner | IsModerator]
         else:
@@ -47,7 +47,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
     """Создание лекции"""
 
     serializer_class = LessonSerializer
-    permission_classes = [IsNotModerator]
+    permission_classes = [~IsModerator]
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -87,7 +87,7 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     """Удаление лекции"""
 
     queryset = Lesson.objects.all()
-    permission_classes = [IsOwner, IsNotModerator]
+    permission_classes = [IsOwner, ~IsModerator]
 
 
 class SubscriptionAPIView(generics.GenericAPIView):
