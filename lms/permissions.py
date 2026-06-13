@@ -2,7 +2,7 @@ from rest_framework import permissions
 
 
 class IsOwner(permissions.BasePermission):
-    message = "Проверка, что юзер является владельцем объекта"
+    """Проверка, что юзер является владельцем объекта"""
 
     def has_object_permission(self, request, view, obj):
         if not hasattr(obj, "owner"):
