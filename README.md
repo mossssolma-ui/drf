@@ -14,3 +14,4 @@ Backend-сервер для платформы онлайн-обучения (Le
 - `ipython`
 - `python-dotenv`
 - `PostgreSQL`
+- `coverage`
