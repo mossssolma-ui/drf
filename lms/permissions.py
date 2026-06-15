@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 class IsOwner(IsAuthenticated):
     """Проверка, что юзер является владельцем объекта"""
+
     message = "Вы не являетесь владельцем этого объекта"
 
     def has_object_permission(self, request, view, obj):
