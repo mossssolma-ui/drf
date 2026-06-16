@@ -1,4 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import get_object_or_404
@@ -6,7 +8,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from lms.models import Course
+from lms.permissions import IsOwner
 from users.models import CustomUser, Payment
+from users.permissions import IsPaymentOwner
 from users.serializers import CustomUserSerializer, PaymentCreateSerializer, PaymentSerializer
 from users.services import get_payment_status, process_course_payment, update_payment_status
 
@@ -52,6 +56,28 @@ class PaymentCreateAPIView(generics.CreateAPIView):
 
     serializer_class = PaymentCreateSerializer
 
+    @swagger_auto_schema(
+        operation_description="Создает новый платеж через Stripe и возвращает ссылку на оплату.",
+        request_body=serializer_class,
+        responses={
+            201: openapi.Response(
+                description="Платеж успешно создан.",
+                examples={
+                    "application/json": {
+                        "payment_id": 1,
+                        "payment_link": "https://checkout.stripe.com/pay/...",
+                        "amount": "5000.00",
+                        "status": "pending",
+                    }
+                },
+            ),
+            400: openapi.Response(
+                description="Ошибка валидации или курс бесплатный.",
+                examples={"application/json": {"error": "Курс бесплатный"}},
+            ),
+            401: "Не авторизован",
+        },
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -81,12 +107,28 @@ class PaymentStatusAPIView(generics.RetrieveAPIView):
     """Проверяет статус"""
 
     queryset = Payment.objects.all()
+    permission_classes = [IsPaymentOwner]
 
+    @swagger_auto_schema(
+        operation_description="Проверяет статус платежа в Stripe и обновляет его в БД.",
+        responses={
+            200: openapi.Response(
+                description="Статус платежа получен.",
+                examples={
+                    "application/json": {"payment_id": 1, "status": "paid", "stripe_status": "paid", "updated": True}
+                },
+            ),
+            403: openapi.Response(
+                description="Нет доступа к этому платежу.", examples={"application/json": {"error": "Нет доступа"}}
+            ),
+            404: "Платеж не найден",
+        },
+    )
     def get(self, request, *args, **kwargs):
         payment = self.get_object()
 
-        if payment.user != request.user:
-            return Response({"error": "Нет доступа"}, status=status.HTTP_403_FORBIDDEN)
+        # if payment.user != request.user:
+        #     return Response({"error": "Нет доступа"}, status=status.HTTP_403_FORBIDDEN)
 
         stripe_status = get_payment_status(payment.stripe_session_id)
         updated = update_payment_status(payment)
