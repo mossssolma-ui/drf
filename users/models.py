@@ -57,11 +57,18 @@ class Payment(models.Model):
     class PayMethod(models.TextChoices):
         CASH = "cash", "Наличные"
         TRANSFER = "transfer", "Перевод на счет"
+        STRIPE = "stripe", "Банковская карта (Stripe)"
+
+    class StatusChoices(models.TextChoices):
+        PENDING = "pending", "Ожидает оплаты"
+        PAID = "paid", "Оплачено"
+        FAILED = "failed", "Ошибка оплаты"
+        CANCELED = "canceled", "Отменена оплата"
 
     user = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="payments", verbose_name="Пользователь"
     )
-    payment_date = models.DateField(verbose_name="Дата платежа")
+    payment_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата платежа")
     paid_course = models.ForeignKey(
         Course, on_delete=models.CASCADE, verbose_name="Оплаченный курс", null=True, blank=True
     )
@@ -72,9 +79,36 @@ class Payment(models.Model):
     payment_method = models.CharField(
         max_length=30, choices=PayMethod.choices, default=PayMethod.TRANSFER, verbose_name="Способ оплаты"
     )
+    status = models.CharField(
+        max_length=30, choices=StatusChoices.choices, default=StatusChoices.PENDING, verbose_name="Статус платежа"
+    )
+    stripe_session_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="ID сессии",
+    )
+    stripe_product_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="ID продукта в Stripe",
+        help_text="Идентификатор созданного продукта в Stripe",
+    )
+
+    stripe_price_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="ID цены в Stripe",
+        help_text="Идентификатор созданной цены в Stripe",
+    )
+
+    stripe_payment_link = models.URLField(max_length=500, blank=True, null=True, verbose_name="Ссылка на оплату")
+    paid_at = models.DateTimeField(blank=True, null=True, verbose_name="Дата подтверждения оплаты")
 
     def __str__(self):
-        return f"{self.user} - {self.payment_method}- {self.payment_date}"
+        return f"{self.user} - {self.payment_amount}руб. - {self.get_status_display()}"
 
     class Meta:
         verbose_name = "Платеж"

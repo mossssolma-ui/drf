@@ -3,6 +3,8 @@ from django.db import models
 
 
 class Course(models.Model):
+    """Данные курса"""
+
     title = models.CharField(max_length=100, verbose_name="Название", help_text="Введите название курса")
     preview = models.ImageField(
         upload_to="lms/courses/preview/",
@@ -22,6 +24,7 @@ class Course(models.Model):
         blank=True,
         verbose_name="Владелец",
     )
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Цена курса")
 
     def __str__(self):
         return self.title
@@ -33,6 +36,8 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
+    """Данные урока"""
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons", verbose_name="Курс")
     title = models.CharField(max_length=100, verbose_name="Название", help_text="Введите название урока")
     description = models.TextField(

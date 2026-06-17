@@ -18,6 +18,12 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class PaymentCreateSerializer(serializers.Serializer):
+    course_id = serializers.IntegerField()
+    success_url = serializers.URLField()
+    cancel_url = serializers.URLField()
+
+
 class CustomUserSerializer(serializers.ModelSerializer):
     payments = PaymentSerializer(many=True, read_only=True)
 
