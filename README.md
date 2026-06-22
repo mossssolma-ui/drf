@@ -17,3 +17,7 @@ Backend-сервер для платформы онлайн-обучения (Le
 - `coverage`
 - `drf-yasg`
 - `stripe`
+- `redis`
+- `celery`
+- `eventlet` # добавил для Windows
+- `django-celery-beat`
