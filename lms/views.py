@@ -1,4 +1,8 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import generics, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
@@ -6,7 +10,10 @@ from lms.models import Course, Lesson, Subscription
 from lms.paginators import CustomPaginator
 from lms.permissions import IsOwner
 from lms.serializers import CourseSerializer, LessonSerializer
+from users.models import CustomUser
 from users.permissions import IsModerator
+
+from .tasks import send_course_update_email, send_subscribers_update_email
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -41,6 +48,25 @@ class CourseViewSet(viewsets.ModelViewSet):
             self.permission_classes = []
 
         return super().get_permissions()
+
+    def perform_update(self, serializer):
+        obj = self.get_object()
+        old_updated_at = obj.updated_at
+        serializer.save()
+
+        if obj.updated_at and old_updated_at:
+            time_diff = obj.updated_at - old_updated_at
+            if time_diff > timedelta(hours=4):
+                send_subscribers_update_email.delay(obj.id)
+
+    @action(detail=True, methods=("post",))
+    def force_update(self, request, pk=None):
+        course = self.get_object()
+        course.updated_at = timezone.now()
+        course.save()
+        send_subscribers_update_email.delay(course.id)
+        serializer = self.get_serializer(course)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
