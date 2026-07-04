@@ -1,0 +1,82 @@
+version: '3.9'
+
+services:
+  lms:
+    build: .
+    command: >
+      bash -c "python manage.py migrate && python manage.py csu && python 
+      manage.py create_payments && python manage.py runserver 0.0.0.0:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/lms
+      - static_volume:/lms/static
+      - media_volume:/lms/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    image: postgres:16.0
+    env_file:
+      - .env
+    expose:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    env_file:
+      - .env
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  celery:
+    build: .
+    command: celery -A config worker -l INFO -P eventlet
+    env_file:
+      - .env
+    volumes:
+      - .:/lms
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build: .
+    command: celery -A config beat -l INFO
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+networks:
+  default:
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+  media_volume:
