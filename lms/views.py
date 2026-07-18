@@ -10,10 +10,9 @@ from lms.models import Course, Lesson, Subscription
 from lms.paginators import CustomPaginator
 from lms.permissions import IsOwner
 from lms.serializers import CourseSerializer, LessonSerializer
-from users.models import CustomUser
 from users.permissions import IsModerator
 
-from .tasks import send_course_update_email, send_subscribers_update_email
+from .tasks import send_subscribers_update_email
 
 
 class CourseViewSet(viewsets.ModelViewSet):
