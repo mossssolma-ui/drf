@@ -1,5 +1,5 @@
 media/*
-!media/lesson/preview/.gitkeep
+!media/courses/lessons/preview/.gitkeep
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -40,7 +40,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
-htmlcov/
+# htmlcov/
 .tox/
 .nox/
 .coverage
