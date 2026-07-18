@@ -1,0 +1,121 @@
+name: Django CI
+
+on: [ push, pull_request ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      #      Получаем код из репозитория
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      #      Установка Python нужной версии
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      #      Установка Poetry
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      #      Установка зависимостей из pyproject.toml из группы lint
+      - name: Install dependencies including dev
+        run: poetry install --no-interaction --no-ansi --with lint
+
+      #      Запуск линтера Flake8
+      - name: Run Flake8
+        run: poetry run flake8 .
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      #      Получаем код из репозитория
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      #      Установка Python нужной версии
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      #      Установка Poetry
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      #      Сохранение скачанных зависимостей в кеш
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      #      Установка зависимостей
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-ansi
+
+      #        Запуск тестов
+      - name: Run tests
+        env:
+          SECRET_KEY: "django-insecure-test-key-for-ci"
+          STRIPE_API_KEY: "sk_test_1234567890"
+        run: poetry run python manage.py test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      #      Получаем код из репозитория
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      #        Авторизоваться в DokerHub используя секреты GitHub Actions
+      - name: Log in Docker Hub
+        run: |
+          echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+
+      #      Сборка докер-образа
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/django_t6:${{ github.sha }} .
+
+      #      Пуш докер-образа в Docker Hub
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/django_t6:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      #      Настройка SSH для подключения к серверу
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      #      Деплой на сервер
+      - name: Deploy to server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          cd ${{ secrets.DEPLOY_DIR }}
+          git pull
+          docker compose down
+          docker compose pull
+          docker compose up -d --build
+          docker compose exec web python manage.py migrate
+          docker compose exec web python manage.py collectstatic --noinput
+          EOF

@@ -1,11 +1,12 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
 from celery.schedules import crontab
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -85,7 +86,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "Europe/Moscow"
 
@@ -96,6 +97,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
@@ -146,3 +148,18 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://158.160.154.97",
+    "https://158.160.154.97",
+    "http://localhost",
+    "http://127.0.0.1",
+]
+
+if "test" in sys.argv:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        }
+    }
