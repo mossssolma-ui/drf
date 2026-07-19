@@ -1,7 +1,10 @@
 .git
 .gitignore
 .env
+.env.sample
 venv
-__pycache__
+__pychache__
 *.pyc
 test_db.sqlite3
+README.md
+static/

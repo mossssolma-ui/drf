@@ -8,7 +8,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from lms.models import Course
-from lms.permissions import IsOwner
 from users.models import CustomUser, Payment
 from users.permissions import IsPaymentOwner
 from users.serializers import CustomUserSerializer, PaymentCreateSerializer, PaymentSerializer
