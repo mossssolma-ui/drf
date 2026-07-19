@@ -18,8 +18,8 @@ RUN poetry config virtualenvs.create false \
 COPY . .
 
 RUN mkdir -p /lms/media
-RUN mkdir -p /lms/static
+RUN mkdir -p /lms/staticfiles
 
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000"]

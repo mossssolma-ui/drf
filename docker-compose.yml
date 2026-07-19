@@ -4,21 +4,37 @@ services:
   lms:
     build: .
     command: >
-      bash -c "python manage.py migrate && python manage.py csu && python 
-      manage.py create_payments && python manage.py runserver 0.0.0.0:8000"
+      bash -c "python manage.py migrate && 
+      python manage.py csu && 
+      python manage.py create_payments && 
+      python manage.py collectstatic --noinput && 
+      gunicorn config.wsgi:application --bind 0.0.0.0:8000"
     env_file:
       - .env
     volumes:
       - .:/lms
-      - static_volume:/lms/static
+      - static_volume:/lms/staticfiles
       - media_volume:/lms/media
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - static_volume:/lms/staticfiles
+      - media_volume:/lms/media
+    depends_on:
+      lms:
+        condition: service_started
 
   db:
     image: postgres:16.0
